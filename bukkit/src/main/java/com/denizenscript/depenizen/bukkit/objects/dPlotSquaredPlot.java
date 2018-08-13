@@ -46,7 +46,7 @@ public class dPlotSquaredPlot implements dObject {
             return new dPlotSquaredPlot(p);
         }
         catch (Throwable e) {
-            dB.echoError(e);
+            // Do nothing.
         }
         return null;
     }
