@@ -107,9 +107,9 @@ public class FAWECommand extends AbstractCommand {
                 scriptEntry.addObject("target", arg.asType(dEntity.class));
             }
 
-            else if (!scriptEntry.hasObject("schematicAction")
+            else if (!scriptEntry.hasObject("schematic_action")
                     && arg.matchesEnum(SchematicAction.values())) {
-                scriptEntry.addObject("schematicAction", arg.asElement());
+                scriptEntry.addObject("schematic_action", arg.asElement());
             }
 
             else if (!scriptEntry.hasObject("action")
@@ -150,14 +150,14 @@ public class FAWECommand extends AbstractCommand {
     @Override
     public void execute(ScriptEntry scriptEntry) throws CommandExecutionException {
 
-        Element action = scriptEntry.getdObject("action");
-        Element schematicAction = scriptEntry.getdObject("schematicAction");
+        Element action = scriptEntry.getElement("action");
+        Element schematicAction = scriptEntry.getElement("schematic_action");
         dLocation position = scriptEntry.getdObject("position");
-        Element filePath = scriptEntry.getdObject("filepath");
-        Element noAir = scriptEntry.getdObject("noair");
+        Element filePath = scriptEntry.getElement("filepath");
+        Element noAir = scriptEntry.getElement("noair");
         dCuboid cuboid = scriptEntry.getdObject("cuboid");
-        Element id = scriptEntry.getdObject("id");
-        Element data = scriptEntry.getdObject("data");
+        Element id = scriptEntry.getElement("id");
+        Element data = scriptEntry.getElement("data");
         dEntity target = scriptEntry.getdObject("target");
         dLocation position2 = scriptEntry.getdObject("position2");
 
