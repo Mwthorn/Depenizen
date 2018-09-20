@@ -13,6 +13,7 @@ import com.sk89q.worldedit.bukkit.BukkitWorld;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat;
+import com.sk89q.worldedit.math.transform.AffineTransform;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
 import com.sk89q.worldedit.world.World;
@@ -102,6 +103,16 @@ public class FAWECommand extends AbstractCommand {
                 scriptEntry.addObject("noair", arg.asElement());
             }
 
+            else if (!scriptEntry.hasObject("undoable")
+                    && arg.matchesPrefix("undo")) {
+                scriptEntry.addObject("undoable", arg.asElement());
+            }
+
+            else if (!scriptEntry.hasObject("rotate")
+                    && arg.matchesPrefix("rotate")) {
+                scriptEntry.addObject("rotate", arg.asElement());
+            }
+
             else if (!scriptEntry.hasObject("target")
                     && arg.matchesPrefix("target")) {
                 scriptEntry.addObject("target", arg.asType(dEntity.class));
@@ -139,6 +150,14 @@ public class FAWECommand extends AbstractCommand {
             scriptEntry.addObject("data", new Element(0));
         }
 
+        if (!scriptEntry.hasObject("rotate")) {
+            scriptEntry.addObject("rotate", new Element(0));
+        }
+
+        if (!scriptEntry.hasObject("undoable")) {
+            scriptEntry.addObject("undoable", new Element(false));
+        }
+
         if (!scriptEntry.hasObject("target")) {
             if (((BukkitScriptEntryData) scriptEntry.entryData).hasPlayer()) {
                 scriptEntry.addObject("target", ((BukkitScriptEntryData) scriptEntry.entryData).getPlayer().getDenizenEntity());
@@ -158,8 +177,10 @@ public class FAWECommand extends AbstractCommand {
         dCuboid cuboid = scriptEntry.getdObject("cuboid");
         Element id = scriptEntry.getElement("id");
         Element data = scriptEntry.getElement("data");
+        Element undoable = scriptEntry.getElement("undoable");
         dEntity target = scriptEntry.getdObject("target");
         dLocation position2 = scriptEntry.getdObject("position2");
+        Element rotate = scriptEntry.getElement("rotate");
 
         // Report to dB
         dB.report(scriptEntry, getName(), action.debug()
@@ -169,6 +190,7 @@ public class FAWECommand extends AbstractCommand {
                 + (cuboid != null ? cuboid.debug() : "")
                 + (id != null ? id.debug() : "")
                 + (data != null ? data.debug() : "")
+                + (rotate != null ? rotate.debug() : "")
                 + (filePath != null ? filePath.debug() : ""));
 
         if (action.asString().equalsIgnoreCase("schematic")) {
@@ -194,12 +216,27 @@ public class FAWECommand extends AbstractCommand {
                     return;
                 }
 
+                if (rotate == null) {
+                    dB.echoError(scriptEntry.getResidingQueue(), "Rotate not specified!");
+                    return;
+                }
+
                 String directory = URLDecoder.decode(System.getProperty("user.dir"));
                 File file = new File(directory + "/plugins/Denizen/schematics/" + filePath + ".schematic");
                 try {
                     World w = new BukkitWorld(position.getWorld());
                     Vector pos = new Vector(position.getX(),position.getY(),position.getZ());
-                    ClipboardFormat.SCHEMATIC.load(file).paste(w, pos, true, !noAir.asBoolean(), null);
+                    WorldEditPlugin wep = Support.getPlugin(WorldEditSupport.class);
+                    AffineTransform transform = new AffineTransform();
+                    transform = transform.rotateY(rotate.asInt());
+                    EditSession editSession = ClipboardFormat.SCHEMATIC.load(file).paste(w, pos, undoable.asBoolean(), !noAir.asBoolean(), transform);
+
+
+                    if (target != null && target.isPlayer() && undoable.asBoolean()) {
+                        com.sk89q.worldedit.entity.Player p = wep.wrapPlayer(target.getPlayer());
+                        FawePlayer fp = FawePlayer.wrap(p);
+                        fp.getSession().remember(editSession);
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
